@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Department Attendance Report</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(to right, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      color: #333;
+    }
+
+    .sidebar {
+      background: #fff;
+      width: 240px;
+      padding: 30px 20px;
+      border-top-right-radius: 20px;
+      border-bottom-right-radius: 20px;
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 25px;
+      color: #4b4fcb;
+    }
+
+    .sidebar a {
+      display: block;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      font-size: 14px;
+      color: #333;
+      transition: background 0.3s;
+    }
+
+    .sidebar a:hover {
+      background: #e0e7ff;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .report-container {
+      background: white;
+      padding: 30px;
+      border-radius: 20px;
+      max-width: 1000px;
+      width: 100%;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      overflow-x: auto;
+    }
+
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .header-bar h2 {
+      color: #4b4fcb;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    .logout-btn {
+      background-color: #f56565;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      font-size: 14px;
+    }
+
+    .logout-btn:hover {
+      background-color: #c53030;
+    }
+
+    .actions {
+      text-align: right;
+      margin-bottom: 20px;
+    }
+
+    .actions form {
+      display: inline;
+      margin-left: 10px;
+    }
+
+    button {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 6px;
+      background-color: #4b4fcb;
+      color: white;
+      font-weight: 500;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #3a3dbd;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f5f6fa;
+      font-weight: 600;
+      color: #333;
+    }
+
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>AttendanceAI</h2>
+    <a href="/dashboard">Overview</a>
+    <a href="/employees">Employee Management</a>
+    <a href="/attendance">Attendance</a>
+    <a href="/face_recognition">Face Recognition</a>
+    <a href="/reports">Reports & Analytics</a>
+    <a href="/leave_management">Leave Management</a>
+    <a href="/settings">System Settings</a>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="report-container">
+      <div class="header-bar">
+        <h2>Department-wise Attendance Report</h2>
+        <button class="logout-btn" onclick="window.location.href='/dashboard'">Logout</button>
+      </div>
+
+      <div class="actions">
+        <form method="get" action="/export/pdf">
+          <button type="submit">Generate PDF</button>
+        </form>
+        <form method="get" action="/export/excel">
+          <button type="submit">Generate Excel</button>
+        </form>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Department</th>
+            <th>Total Employees</th>
+            <th>Present Today</th>
+            <th>Attendance Rate</th>
+            <th>Late Arrivals</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for report in reports %}
+          <tr>
+            <td>{{ report.department }}</td>
+            <td>{{ report.total_employees }}</td>
+            <td>{{ report.present_today }}</td>
+            <td>{{ report.attendance_rate }}</td>
+            <td>{{ report.late_arrivals }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>

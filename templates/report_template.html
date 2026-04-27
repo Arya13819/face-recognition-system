@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Attendance Report PDF</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h2 { color: #4b4fcb; text-align: center; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #333; padding: 6px; text-align: center; }
+        th { background-color: #eee; }
+    </style>
+</head>
+<body>
+    <h2>Department-wise Attendance Report</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Department</th>
+                <th>Total Employees</th>
+                <th>Present Today</th>
+                <th>Attendance Rate</th>
+                <th>Late Arrivals</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for report in reports %}
+            <tr>
+                <td>{{ report.department }}</td>
+                <td>{{ report.total_employees }}</td>
+                <td>{{ report.present_today }}</td>
+                <td>{{ report.attendance_rate }}</td>
+                <td>{{ report.late_arrivals }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
