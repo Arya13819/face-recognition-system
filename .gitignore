@@ -1,0 +1,12 @@
+venv/
+venv_test/
+__pycache__/
+*.pyc
+*.pyo
+instance/
+*.db
+static/uploads/*
+!static/uploads/.gitkeep
+.env
+.DS_Store
+*.log

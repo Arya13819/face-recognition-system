@@ -159,28 +159,36 @@
       <div class="header-bar">
         <h2>Employee Management</h2>
         <a class="add-link" href="/employees/add">+ Add Employee</a>
-        <button class="logout-btn">Logout</button>
+        <button class="logout-btn" onclick="window.location.href='/logout'">Logout</button>
       </div>
 
       <table>
         <thead>
           <tr>
+            <th>Photo</th>
             <th>Employee ID</th>
             <th>Name</th>
             <th>Department</th>
             <th>Role</th>
-            <th>Status</th>
+            <th>Face Registered</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for emp in employees %}
           <tr>
+            <td>
+              {% if emp.photo_path %}
+                <img src="/static/{{ emp.photo_path }}" alt="{{ emp.name }}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;">
+              {% else %}
+                —
+              {% endif %}
+            </td>
             <td>{{ emp.employee_id }}</td>
             <td>{{ emp.name }}</td>
             <td>{{ emp.department }}</td>
             <td>{{ emp.role }}</td>
-            <td>Active</td>
+            <td>{{ '✅ Yes' if emp.face_encoding else '— No' }}</td>
             <td class="action-links">
               <a href="/employees/edit/{{ emp.id }}">Edit</a> |
               <a href="/employees/delete/{{ emp.id }}" onclick="return confirm('Are you sure you want to delete this employee?')">Delete</a>

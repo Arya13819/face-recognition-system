@@ -1,0 +1,21 @@
+# Core app
+Flask==3.0.3
+Flask-SQLAlchemy==3.1.1
+Werkzeug==3.0.4
+python-dotenv==1.0.1
+gunicorn==22.0.0
+
+# Face recognition runtime deps
+# NOTE: dlib / face_recognition / face_recognition_models are installed by build.sh,
+# NOT from this file — installing them normally pulls in `dlib` and compiles it from
+# source, which takes 10+ minutes and times out on most free hosting build steps.
+# build.sh installs the prebuilt `dlib-bin` wheel instead, then installs
+# face_recognition with --no-deps so it uses that prebuilt dlib.
+setuptools<81
+numpy==1.26.4
+Pillow==10.4.0
+
+# Reports
+pandas==2.2.2
+xlsxwriter==3.2.0
+xhtml2pdf==0.2.16

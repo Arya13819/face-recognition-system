@@ -98,6 +98,13 @@
 <body>
     <div class="login-card">
         <h2>Face Recognition Attendance System</h2>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div style="background:#fff5f5; color:#c53030; padding:10px 14px; border-radius:8px; margin-bottom:15px; font-size:14px;">
+              {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
         <form method="POST" action="/login">
             <div class="form-group">
                 <label for="username">Username</label>
@@ -107,15 +114,6 @@
             <div class="form-group">
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" required>
-            </div>
-
-            <div class="form-group">
-                <label for="role">Role</label>
-                <select id="role" name="role">
-                    <option>Super Admin</option>
-                    <option>Admin</option>
-                    <option>Employee</option>
-                </select>
             </div>
 
             <button type="submit" class="login-btn">Login</button>

@@ -84,7 +84,14 @@
 <body>
   <div class="form-container">
     <h2>Add New Employee</h2>
-    <form method="POST" action="/employees/add">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div style="background:#f0fff4; color:#2f855a; padding:10px 14px; border-radius:8px; margin-bottom:15px; font-size:14px;">
+          {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="/employees/add" enctype="multipart/form-data">
       <label for="employee_id">Employee ID:</label>
       <input type="text" name="employee_id" id="employee_id" required />
 
@@ -105,6 +112,9 @@
 
       <label for="date_of_joining">Date of Joining:</label>
       <input type="date" name="date_of_joining" id="date_of_joining" required />
+
+      <label for="photo">Photo (clear, front-facing — used to register their face):</label>
+      <input type="file" name="photo" id="photo" accept="image/*" />
 
       <button type="submit">Add Employee</button>
     </form>

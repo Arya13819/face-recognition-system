@@ -1,20 +1,374 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Face Recognition - Face Recognition Attendance System</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Face Recognition - AttendanceAI</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      display: flex;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #333;
+    }
+
+    .sidebar {
+      background-color: #ffffff;
+      width: 240px;
+      padding: 30px 20px;
+      border-top-right-radius: 20px;
+      border-bottom-right-radius: 20px;
+      box-shadow: 4px 0 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .sidebar h2 {
+      font-size: 20px;
+      margin-bottom: 25px;
+      color: #4b4fcb;
+    }
+
+    .sidebar a {
+      display: block;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-weight: 500;
+      color: #333;
+      font-size: 14px;
+      transition: background 0.3s;
+    }
+
+    .sidebar a.active, .sidebar a:hover {
+      background: #eef1ff;
+    }
+
+    .main-content {
+      flex-grow: 1;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h2.page-title {
+      color: white;
+      margin-bottom: 25px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 25px;
+    }
+
+    @media (max-width: 800px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 25px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h3 {
+      margin-bottom: 15px;
+      color: #4a4a4a;
+    }
+
+    .camera-box {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      background: #111;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    #webcam, #captureCanvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    #captureCanvas { display: none; }
+
+    .status-pill {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      background: rgba(0,0,0,0.55);
+    }
+
+    .status-pill.live { background: #38a169; }
+    .status-pill.off { background: #718096; }
+
+    .result-banner {
+      margin-top: 15px;
+      padding: 14px 16px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: none;
+    }
+
+    .result-banner.success { background: #e6fffa; color: #2c7a7b; display: block; }
+    .result-banner.unrecognized { background: #fffaf0; color: #b7791f; display: block; }
+    .result-banner.no_face { background: #f7fafc; color: #718096; display: block; }
+    .result-banner.error { background: #fff5f5; color: #c53030; display: block; }
+
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      margin-right: 8px;
+    }
+
+    .btn-primary { background: #5a67d8; color: white; }
+    .btn-primary:hover { background: #434190; }
+    .btn-secondary { background: #e2e8f0; color: #2d3748; }
+    .btn-secondary:hover { background: #cbd5e0; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .controls { margin-top: 15px; }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 14px;
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+
+    table.log-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    table.log-table th, table.log-table td {
+      padding: 8px 10px;
+      text-align: left;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .badge {
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge.success { background: #e6fffa; color: #2c7a7b; }
+    .badge.unrecognized { background: #fff5f5; color: #c53030; }
+
+    .lib-warning {
+      background: #fff5f5;
+      color: #c53030;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+  </style>
 </head>
 <body>
-    <h2>Face Recognition System</h2>
-    <div>
-        <h3>Live Recognition</h3>
-        <div class="camera-preview">
-            📹 Camera Feed<br>
-            <small>Face detection active</small>
+
+  <div class="sidebar">
+    <h2>AttendanceAI</h2>
+    <a href="/dashboard">Overview</a>
+    <a href="/employees">Employee Management</a>
+    <a href="/attendance">Attendance</a>
+    <a href="/face_recognition" class="active">Face Recognition</a>
+    <a href="/reports">Reports & Analytics</a>
+    <a href="/leave_management">Leave Management</a>
+    <a href="/settings">System Settings</a>
+    <a href="/logout">Logout</a>
+  </div>
+
+  <div class="main-content">
+    <div class="container">
+      <h2 class="page-title">Face Recognition</h2>
+
+      {% if not library_available %}
+      <div class="lib-warning">
+        ⚠️ The <code>face_recognition</code> library isn't installed on this server, so live recognition is disabled.
+        Check the deployment README to enable it.
+      </div>
+      {% endif %}
+
+      <div class="grid">
+        <div class="card">
+          <h3>Live Recognition</h3>
+          <div class="camera-box">
+            <video id="webcam" autoplay playsinline muted></video>
+            <canvas id="captureCanvas"></canvas>
+            <span class="status-pill off" id="statusPill">Camera Off</span>
+          </div>
+
+          <div class="controls">
+            <button class="btn btn-primary" id="startBtn" onclick="startRecognition()" {% if not library_available %}disabled{% endif %}>Start Camera</button>
+            <button class="btn btn-secondary" id="stopBtn" onclick="stopRecognition()" disabled>Stop</button>
+          </div>
+
+          <div class="result-banner" id="resultBanner"></div>
         </div>
-        <button onclick="startRecognition()">Start Recognition</button>
-        <button onclick="stopRecognition()">Stop</button>
+
+        <div class="card">
+          <h3>Recognition Status</h3>
+          <div class="stat-row"><span>Employees registered</span><strong>{{ total_employees }}</strong></div>
+          <div class="stat-row"><span>Faces enrolled</span><strong>{{ registered_count }}</strong></div>
+          <div class="stat-row"><span>Match confidence threshold</span><strong>{{ ((settings.confidence_threshold if settings else 0.55) * 100) | round | int }}%</strong></div>
+          <p style="margin-top: 15px; color: #718096; font-size: 13px;">
+            Faces are registered automatically from an employee's photo when they're added.
+            Adjust the confidence threshold from System Settings.
+          </p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top: 25px;">
+        <h3>Recent Recognition Attempts</h3>
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Confidence</th>
+              <th>Camera</th>
+              <th>Time</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            {% for log in recognition_logs %}
+            <tr>
+              <td>{{ log.employee_name }}</td>
+              <td>{{ log.confidence }}%</td>
+              <td>{{ log.camera_name }}</td>
+              <td>{{ log.timestamp.strftime('%d %b, %H:%M:%S') }}</td>
+              <td><span class="badge {{ 'success' if log.status == 'Success' else 'unrecognized' }}">{{ log.status }}</span></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align:center; color:#718096;">No recognition attempts yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     </div>
+  </div>
+
+  <script>
+    let stream = null;
+    let recognitionInterval = null;
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('captureCanvas');
+    const statusPill = document.getElementById('statusPill');
+    const resultBanner = document.getElementById('resultBanner');
+    const startBtn = document.getElementById('startBtn');
+    const stopBtn = document.getElementById('stopBtn');
+
+    async function startRecognition() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = stream;
+        statusPill.textContent = 'Live';
+        statusPill.classList.remove('off');
+        statusPill.classList.add('live');
+        startBtn.disabled = true;
+        stopBtn.disabled = false;
+
+        // Capture and send a frame every 3 seconds
+        recognitionInterval = setInterval(captureAndRecognize, 3000);
+      } catch (err) {
+        showResult('error', 'Could not access the camera: ' + err.message);
+      }
+    }
+
+    function stopRecognition() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      clearInterval(recognitionInterval);
+      recognitionInterval = null;
+      statusPill.textContent = 'Camera Off';
+      statusPill.classList.remove('live');
+      statusPill.classList.add('off');
+      startBtn.disabled = false;
+      stopBtn.disabled = true;
+    }
+
+    function captureAndRecognize() {
+      if (!video.videoWidth) return;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+      fetch('/api/recognize-face', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, camera: 'Default Camera' })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            showResult('success', `✅ ${data.name} recognized (${data.confidence}% match)` + (data.checked_in ? ' — checked in.' : ' — already checked in today.'));
+          } else if (data.status === 'unrecognized') {
+            showResult('unrecognized', `❓ Face detected but not recognized (best match ${data.confidence}%, below threshold).`);
+          } else if (data.status === 'no_face') {
+            showResult('no_face', '👀 No face detected in frame.');
+          } else {
+            showResult('error', data.message || 'Recognition failed.');
+          }
+          prependLogRow(data);
+        })
+        .catch(err => showResult('error', 'Request failed: ' + err.message));
+    }
+
+    function showResult(type, message) {
+      resultBanner.className = 'result-banner ' + type;
+      resultBanner.textContent = message;
+    }
+
+    function prependLogRow(data) {
+      if (!data.name) return;
+      const tbody = document.getElementById('logTableBody');
+      const row = document.createElement('tr');
+      const statusLabel = data.status === 'success' ? 'Success' : 'Unrecognized';
+      const badgeClass = data.status === 'success' ? 'success' : 'unrecognized';
+      row.innerHTML = `
+        <td>${data.name}</td>
+        <td>${data.confidence ?? 0}%</td>
+        <td>Default Camera</td>
+        <td>${new Date().toLocaleTimeString()}</td>
+        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+      `;
+      tbody.insertBefore(row, tbody.firstChild);
+    }
+
+    window.addEventListener('beforeunload', stopRecognition);
+  </script>
 </body>
 </html>

@@ -151,7 +151,7 @@
         <button class="dashboard-btn" onclick="window.location.href='/dashboard'">← Back to Dashboard</button>
       </div>
 
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <label>Employee ID:</label>
         <input type="text" name="employee_id" value="{{ employee.employee_id }}" required>
 
@@ -172,6 +172,9 @@
 
         <label>Date of Joining:</label>
         <input type="date" name="date_of_joining" value="{{ employee.date_of_joining }}" required>
+
+        <label>Update Photo (optional — re-registers face if changed):</label>
+        <input type="file" name="photo" accept="image/*">
 
         <input type="submit" value="Update">
       </form>

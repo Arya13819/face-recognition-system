@@ -161,7 +161,7 @@
     <div class="container">
       <div class="header-bar">
         <h3>System Settings</h3>
-        <button class="logout-btn" onclick="window.location.href='/dashboard'">Logout</button>
+        <button class="logout-btn" onclick="window.location.href='/logout'">Logout</button>
       </div>
 
       {% with messages = get_flashed_messages() %}
@@ -193,6 +193,21 @@
         </select>
 
         <button type="submit">Save Settings</button>
+      </form>
+
+      <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+      <form action="/settings" method="POST">
+        <input type="hidden" name="company_name" value="{{ settings.company_name if settings else '' }}">
+        <input type="hidden" name="timezone" value="{{ settings.timezone if settings else 'Asia/Kolkata' }}">
+        <label for="confidence_threshold">Face Match Confidence (higher = stricter, fewer false matches):</label>
+        <input type="range" id="confidence_threshold" name="confidence_threshold"
+               min="0.3" max="0.9" step="0.05"
+               value="{{ settings.confidence_threshold if settings else 0.55 }}"
+               oninput="document.getElementById('confidence_label').innerText = Math.round(this.value * 100) + '%'">
+        <p style="margin-top: 8px; color: #555;">Current: <span id="confidence_label">{{ ((settings.confidence_threshold if settings else 0.55) * 100) | round | int }}%</span></p>
+
+        <button type="submit">Save Confidence Setting</button>
       </form>
     </div>
   </div>
