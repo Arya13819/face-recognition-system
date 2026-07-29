@@ -19,6 +19,7 @@ from io import BytesIO
 from xhtml2pdf import pisa
 
 from database import db
+from demo import init_demo, ensure_demo_data
 from models import (
     Employee, Attendance, Leave, SystemSettings,
     User, FaceEncoding, RecognitionLog
@@ -629,8 +630,10 @@ def init_app():
         db.create_all()
         ensure_admin_user()
         ensure_settings_row()
+        ensure_demo_data()
 
 
+init_demo(app)
 init_app()
 
 if __name__ == '__main__':

@@ -93,6 +93,48 @@
         .back-link a:hover {
             text-decoration: underline;
         }
+        .demo-divider {
+            display: flex;
+            align-items: center;
+            margin: 22px 0 16px;
+            color: #999;
+            font-size: 13px;
+        }
+
+        .demo-divider::before,
+        .demo-divider::after {
+            content: '';
+            flex: 1;
+            border-top: 1px solid #e2e2e2;
+        }
+
+        .demo-divider span { padding: 0 12px; }
+
+        .demo-btn {
+            display: block;
+            text-align: center;
+            padding: 12px;
+            border: 2px solid #4b4fcb;
+            border-radius: 8px;
+            color: #4b4fcb;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+
+        .demo-btn:hover {
+            background: #4b4fcb;
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .demo-note {
+            text-align: center;
+            color: #999;
+            font-size: 12px;
+            margin-top: 8px;
+        }
     </style>
 </head>
 <body>
@@ -118,6 +160,10 @@
 
             <button type="submit" class="login-btn">Login</button>
         </form>
+
+        <div class="demo-divider"><span>or</span></div>
+        <a href="/demo" class="demo-btn">&#128065;&#65039; View Live Demo &mdash; no login needed</a>
+        <p class="demo-note">Read-only tour with realistic sample data</p>
         <div class="back-link">
             <a href="/">Back to Home</a>
         </div>

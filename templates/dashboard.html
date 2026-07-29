@@ -145,6 +145,14 @@
   </style>
 </head>
 <body>
+  {% if session.get('demo') %}
+  <div style="position:fixed;top:0;left:0;right:0;z-index:999;background:#fbbf24;color:#3b2f00;
+              text-align:center;padding:7px 12px;font-size:13.5px;font-weight:600;
+              box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+    &#128065;&#65039; Demo Mode &mdash; read-only tour with sample data &nbsp;&middot;&nbsp;
+    <a href="/logout" style="color:#3b2f00;text-decoration:underline;">Exit demo</a>
+  </div>
+  {% endif %}
   <div class="sidebar">
     <h2>AttendanceAI</h2>
     <a href="/dashboard">Overview</a>
