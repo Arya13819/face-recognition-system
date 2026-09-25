@@ -10,3 +10,4 @@ static/uploads/*
 .env
 .DS_Store
 *.log
+.venv/

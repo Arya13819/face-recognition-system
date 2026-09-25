@@ -298,10 +298,19 @@ def demo_login():
     return redirect(url_for("dashboard"))
 
 
+# POST endpoints that are safe in demo mode: recognition runs as a dry run
+# (nothing is written) and the visitor's own face lives only in their session.
+DEMO_ALLOWED_POSTS = (
+    "/api/recognize-face",
+    "/api/demo/enroll",
+    "/api/demo/reset",
+)
+
+
 def is_write_request(method, path):
     """Pure helper: is this request a write, for demo-guard purposes?"""
     if method == "POST":
-        return True
+        return path not in DEMO_ALLOWED_POSTS
     return any(path.startswith(p) for p in WRITE_GET_PREFIXES)
 
 

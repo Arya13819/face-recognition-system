@@ -103,6 +103,13 @@
     }
 
     #captureCanvas { display: none; }
+    #overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+    .latency { position: absolute; top: 12px; right: 12px; padding: 6px 12px; border-radius: 999px;
+               background: rgba(0,0,0,.55); color: #fff; font: 600 12px/1.2 monospace; display: none; }
+    .demo-try { margin-top: 18px; padding: 16px; border: 1px dashed #5a67d8; border-radius: 12px; background: #f5f7ff; }
+    .demo-try h4 { margin: 0 0 6px; color: #434190; }
+    .demo-try p { margin: 0 0 10px; color: #4a5568; font-size: 13px; }
+    .demo-try input { padding: 9px 12px; border: 1px solid #cbd5e0; border-radius: 8px; margin-right: 6px; width: 150px; }
 
     .status-pill {
       position: absolute;
@@ -208,6 +215,7 @@
   </div>
 
   <div class="main-content">
+    {% include "_flash.html" %}
     <div class="container">
       <h2 class="page-title">Face Recognition</h2>
 
@@ -224,7 +232,9 @@
           <div class="camera-box">
             <video id="webcam" autoplay playsinline muted></video>
             <canvas id="captureCanvas"></canvas>
+            <canvas id="overlay"></canvas>
             <span class="status-pill off" id="statusPill">Camera Off</span>
+            <span class="latency" id="latency"></span>
           </div>
 
           <div class="controls">
@@ -233,6 +243,17 @@
           </div>
 
           <div class="result-banner" id="resultBanner"></div>
+
+          {% if session.get('demo') %}
+          <div class="demo-try">
+            <h4>&#129489; Try it on yourself</h4>
+            <p>Start the camera, type your name and click <b>Enroll my face</b>. Recognition will then pick you out live.
+               Demo mode is a dry run: your face encoding stays in your browser session and nothing is saved to the database.</p>
+            <input id="demoName" maxlength="40" placeholder="Your name">
+            <button class="btn btn-primary" id="enrollBtn" onclick="enrollDemoFace()" disabled>Enroll my face</button>
+            <button class="btn btn-secondary" onclick="resetDemoFace()">Forget me</button>
+          </div>
+          {% endif %}
         </div>
 
         <div class="card">
@@ -278,27 +299,34 @@
   </div>
 
   <script>
+    const IS_DEMO = {{ 'true' if session.get('demo') else 'false' }};
+    const FRAME_EVERY_MS = 1500;   // how often a frame is sent
+    const MAX_FRAME_WIDTH = 640;   // frames are downscaled in the browser before upload
+
     let stream = null;
     let recognitionInterval = null;
+    let inFlight = false;
     const video = document.getElementById('webcam');
     const canvas = document.getElementById('captureCanvas');
+    const overlay = document.getElementById('overlay');
     const statusPill = document.getElementById('statusPill');
+    const latencyEl = document.getElementById('latency');
     const resultBanner = document.getElementById('resultBanner');
     const startBtn = document.getElementById('startBtn');
     const stopBtn = document.getElementById('stopBtn');
+    const enrollBtn = document.getElementById('enrollBtn');
 
     async function startRecognition() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
         video.srcObject = stream;
-        statusPill.textContent = 'Live';
+        statusPill.textContent = IS_DEMO ? 'Live · dry run' : 'Live';
         statusPill.classList.remove('off');
         statusPill.classList.add('live');
         startBtn.disabled = true;
         stopBtn.disabled = false;
-
-        // Capture and send a frame every 3 seconds
-        recognitionInterval = setInterval(captureAndRecognize, 3000);
+        if (enrollBtn) enrollBtn.disabled = false;
+        recognitionInterval = setInterval(captureAndRecognize, FRAME_EVERY_MS);
       } catch (err) {
         showResult('error', 'Could not access the camera: ' + err.message);
       }
@@ -316,15 +344,27 @@
       statusPill.classList.add('off');
       startBtn.disabled = false;
       stopBtn.disabled = true;
+      if (enrollBtn) enrollBtn.disabled = true;
+      clearOverlay();
+      latencyEl.style.display = 'none';
+    }
+
+    // Grab the current frame as a JPEG data URL, downscaled to MAX_FRAME_WIDTH
+    function grabFrame() {
+      if (!video.videoWidth) return null;
+      const scale = Math.min(1, MAX_FRAME_WIDTH / video.videoWidth);
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+      canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.8);
     }
 
     function captureAndRecognize() {
-      if (!video.videoWidth) return;
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      if (inFlight) return;               // never stack requests on a slow server
+      const dataUrl = grabFrame();
+      if (!dataUrl) return;
+      inFlight = true;
+      const t0 = performance.now();
 
       fetch('/api/recognize-face', {
         method: 'POST',
@@ -333,18 +373,54 @@
       })
         .then(res => res.json())
         .then(data => {
+          const roundTrip = Math.round(performance.now() - t0);
+          if (data.processing_ms !== undefined) {
+            latencyEl.textContent = `server ${data.processing_ms} ms · round-trip ${roundTrip} ms`;
+            latencyEl.style.display = 'block';
+          }
+          drawFaces(data.faces || []);
           if (data.status === 'success') {
-            showResult('success', `✅ ${data.name} recognized (${data.confidence}% match)` + (data.checked_in ? ' — checked in.' : ' — already checked in today.'));
+            const who = (data.faces || []).filter(f => f.status === 'success').map(f => `${f.name} (${f.confidence}%)`).join(', ');
+            const suffix = data.demo ? ' (demo: no attendance written)' : (data.checked_in ? ' — checked in.' : ' — already checked in today.');
+            showResult('success', `✅ Recognized: ${who}` + suffix);
           } else if (data.status === 'unrecognized') {
             showResult('unrecognized', `❓ Face detected but not recognized (best match ${data.confidence}%, below threshold).`);
           } else if (data.status === 'no_face') {
             showResult('no_face', '👀 No face detected in frame.');
           } else {
-            showResult('error', data.message || 'Recognition failed.');
+            showResult('error', data.message || data.error || 'Recognition failed.');
           }
-          prependLogRow(data);
+          (data.faces || []).forEach(prependLogRow);
         })
-        .catch(err => showResult('error', 'Request failed: ' + err.message));
+        .catch(err => showResult('error', 'Request failed: ' + err.message))
+        .finally(() => { inFlight = false; });
+    }
+
+    // Map a box from frame pixels to the <video> element (which uses object-fit: cover)
+    function drawFaces(faces) {
+      const W = overlay.clientWidth, H = overlay.clientHeight;
+      overlay.width = W; overlay.height = H;
+      const ctx = overlay.getContext('2d');
+      ctx.clearRect(0, 0, W, H);
+      if (!canvas.width) return;
+      const s = Math.max(W / canvas.width, H / canvas.height);
+      const ox = (W - canvas.width * s) / 2, oy = (H - canvas.height * s) / 2;
+      faces.forEach(f => {
+        const b = f.box; if (!b) return;
+        const x = ox + b.left * s, y = oy + b.top * s;
+        const w = (b.right - b.left) * s, h = (b.bottom - b.top) * s;
+        const color = f.status === 'success' ? '#38a169' : '#dd6b20';
+        ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.strokeRect(x, y, w, h);
+        const label = `${f.name} · ${f.confidence}%`;
+        ctx.font = '600 14px sans-serif';
+        const tw = ctx.measureText(label).width + 12;
+        ctx.fillStyle = color; ctx.fillRect(x, Math.max(0, y - 24), tw, 22);
+        ctx.fillStyle = '#fff'; ctx.fillText(label, x + 6, Math.max(16, y - 8));
+      });
+    }
+
+    function clearOverlay() {
+      overlay.getContext('2d').clearRect(0, 0, overlay.width, overlay.height);
     }
 
     function showResult(type, message) {
@@ -352,20 +428,43 @@
       resultBanner.textContent = message;
     }
 
-    function prependLogRow(data) {
-      if (!data.name) return;
+    // Built with textContent (not innerHTML) so names can't inject HTML
+    function prependLogRow(face) {
+      if (!face || !face.name) return;
       const tbody = document.getElementById('logTableBody');
       const row = document.createElement('tr');
-      const statusLabel = data.status === 'success' ? 'Success' : 'Unrecognized';
-      const badgeClass = data.status === 'success' ? 'success' : 'unrecognized';
-      row.innerHTML = `
-        <td>${data.name}</td>
-        <td>${data.confidence ?? 0}%</td>
-        <td>Default Camera</td>
-        <td>${new Date().toLocaleTimeString()}</td>
-        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
-      `;
+      const ok = face.status === 'success';
+      const cells = [face.name, `${face.confidence ?? 0}%`, IS_DEMO ? 'Default Camera (demo)' : 'Default Camera', new Date().toLocaleTimeString()];
+      cells.forEach(text => { const td = document.createElement('td'); td.textContent = text; row.appendChild(td); });
+      const td = document.createElement('td');
+      const badge = document.createElement('span');
+      badge.className = 'badge ' + (ok ? 'success' : 'unrecognized');
+      badge.textContent = ok ? 'Success' : 'Unrecognized';
+      td.appendChild(badge); row.appendChild(td);
       tbody.insertBefore(row, tbody.firstChild);
+      while (tbody.rows.length > 20) tbody.deleteRow(-1);
+    }
+
+    function enrollDemoFace() {
+      const dataUrl = grabFrame();
+      if (!dataUrl) { showResult('error', 'Start the camera first.'); return; }
+      const name = (document.getElementById('demoName').value || 'You').trim();
+      fetch('/api/demo/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: dataUrl, name })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'enrolled') showResult('success', `🎉 Enrolled "${data.name}". Move around - you should now be recognized live.`);
+          else showResult('error', data.message || 'Enrollment failed.');
+        })
+        .catch(err => showResult('error', 'Request failed: ' + err.message));
+    }
+
+    function resetDemoFace() {
+      fetch('/api/demo/reset', { method: 'POST' })
+        .then(() => showResult('no_face', 'Your demo face was forgotten.'));
     }
 
     window.addEventListener('beforeunload', stopRecognition);

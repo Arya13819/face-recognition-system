@@ -3,6 +3,7 @@ Flask==3.0.3
 Flask-SQLAlchemy==3.1.1
 Werkzeug==3.0.4
 python-dotenv==1.0.1
+tzdata==2024.2           # timezone data for zoneinfo (Windows / slim images)
 gunicorn==22.0.0
 
 # Face recognition runtime deps

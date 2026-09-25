@@ -1,0 +1,8 @@
+{# Shared flash-message banner (v1 set flash() messages on many routes but most pages never displayed them) #}
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div role="status" style="margin:0 0 18px; background:#f0fff4; color:#276749; border:1px solid #c6f6d5; padding:12px 16px; border-radius:10px; font-size:14px;">
+      {% for message in messages %}<div>{{ message }}</div>{% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}

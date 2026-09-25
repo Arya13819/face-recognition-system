@@ -165,17 +165,27 @@
 
   <!-- Main Content -->
   <div class="main-content">
+    {% include "_flash.html" %}
     <div class="report-container">
       <div class="header-bar">
         <h2>Department-wise Attendance Report</h2>
-        <button class="logout-btn" onclick="window.location.href='/dashboard'">Logout</button>
+        <button class="logout-btn" onclick="window.location.href='/dashboard'">&larr; Dashboard</button>
       </div>
+
+      <form method="get" action="/reports" style="display:flex;gap:10px;align-items:center;margin-bottom:12px;">
+        <label for="date" style="font-weight:600;">Report date</label>
+        <input type="date" id="date" name="date" value="{{ report_day }}" max="{{ today }}" onchange="this.form.submit()"
+               style="padding:8px 10px;border:1px solid #cbd5e0;border-radius:6px;">
+        {% if report_day != today %}<span style="color:#718096;font-size:13px;">Showing {{ report_day.strftime('%d %b %Y') }} (latest day with records)</span>{% endif %}
+      </form>
 
       <div class="actions">
         <form method="get" action="/export/pdf">
+          <input type="hidden" name="date" value="{{ report_day }}">
           <button type="submit">Generate PDF</button>
         </form>
         <form method="get" action="/export/excel">
+          <input type="hidden" name="date" value="{{ report_day }}">
           <button type="submit">Generate Excel</button>
         </form>
       </div>
@@ -185,7 +195,7 @@
           <tr>
             <th>Department</th>
             <th>Total Employees</th>
-            <th>Present Today</th>
+            <th>Present</th>
             <th>Attendance Rate</th>
             <th>Late Arrivals</th>
           </tr>
@@ -196,9 +206,18 @@
             <td>{{ report.department }}</td>
             <td>{{ report.total_employees }}</td>
             <td>{{ report.present_today }}</td>
-            <td>{{ report.attendance_rate }}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex:1;min-width:80px;height:8px;background:#edf2f7;border-radius:4px;overflow:hidden;">
+                  <div style="height:100%;width:{{ report.rate_value }}%;background:{{ '#38a169' if report.rate_value >= 80 else ('#d69e2e' if report.rate_value >= 50 else '#e53e3e') }};"></div>
+                </div>
+                <span>{{ report.attendance_rate }}</span>
+              </div>
+            </td>
             <td>{{ report.late_arrivals }}</td>
           </tr>
+          {% else %}
+          <tr><td colspan="5" style="text-align:center;color:#718096;">No employees yet.</td></tr>
           {% endfor %}
         </tbody>
       </table>

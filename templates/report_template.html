@@ -13,12 +13,13 @@
 </head>
 <body>
     <h2>Department-wise Attendance Report</h2>
+    <p>Date: {{ report_day.strftime('%d %B %Y') if report_day else '' }}</p>
     <table>
         <thead>
             <tr>
                 <th>Department</th>
                 <th>Total Employees</th>
-                <th>Present Today</th>
+                <th>Present</th>
                 <th>Attendance Rate</th>
                 <th>Late Arrivals</th>
             </tr>
